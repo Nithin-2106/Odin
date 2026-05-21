@@ -20,3 +20,11 @@ def save_memory(content):
     with open(MEMORY_FILE, "w") as f:
         json.dump(memory, f, indent=2)
     print(f"[memory saved] {entry['time']}: {content[:60]}...")
+
+def get_memory_context(last_n=20):
+    memory = load_memory()
+    if not memory:
+        return "No memory yet."
+    recent = memory[-last_n:]
+    context = "\n".join([f"[{m['time']}] {m['content']}" for m in recent])
+    return context

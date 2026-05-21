@@ -9,6 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from google import genai
 from memory import save_memory, load_memory
+from memory import save_memory, load_memory, get_memory_context
 
 load_dotenv()
 
@@ -242,9 +243,21 @@ def capture_screen():
 
 def ask_gemini(image_path, question):
     image = PIL.Image.open(image_path)
+    memory_context = get_memory_context()
+    prompt = f"""You are Odin, an AI screen companion. 
+    
+Here is your memory of what has happened on screen in this session:
+{memory_context}
+
+Now answer this question from the user: {question}
+
+If the question is about something on screen right now, use the image.
+If it's about something that happened earlier, use the memory.
+Be concise and direct."""
+
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=[question, image]
+        contents=[prompt, image]
     )
     overlay.update_last_message(response.text)
     print(f"Odin: {response.text}")
