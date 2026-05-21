@@ -4,9 +4,11 @@ import PIL.Image
 import os
 import tkinter as tk
 import threading
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 from google import genai
+from memory import save_memory, load_memory
 
 load_dotenv()
 
@@ -247,11 +249,26 @@ def ask_gemini(image_path, question):
     overlay.update_last_message(response.text)
     print(f"Odin: {response.text}")
 
-
+def background_capture():
+    while True:
+        try:
+            image_path = capture_screen()
+            image = PIL.Image.open(image_path)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=["Describe what is happening on this screen in 2-3 sentences. Be concise.", image]
+            )
+            save_memory(response.text)
+            os.remove(image_path)
+        except Exception as e:
+            print(f"[memory error] {e}")
+        time.sleep(30)
 overlay = OdinOverlay()
 
 print("Odin is watching. Press Ctrl+Space to open/close. Press Ctrl+Q to quit.")
 keyboard.add_hotkey('ctrl+space', overlay.toggle)
 keyboard.add_hotkey('ctrl+q', lambda: os._exit(0))
+
+threading.Thread(target=background_capture, daemon=True).start()
 
 overlay.run()
