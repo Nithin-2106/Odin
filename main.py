@@ -244,20 +244,45 @@ def capture_screen():
 def ask_gemini(image_path, question):
     image = PIL.Image.open(image_path)
     memory_context = get_memory_context()
-    prompt = f"""You are Odin, an AI screen companion. 
-    
-Here is your memory of what has happened on screen in this session:
+
+    base_instruction = "You are Odin, a sharp and concise AI assistant. Never use dramatic or poetic language. Always be direct and brief.\n\n"
+
+    question_lower = question.lower()
+
+    if any(phrase in question_lower for phrase in ["make me notes", "make notes", "generate notes", "create notes"]):
+        prompt = base_instruction + f"""Generate clean structured notes from this session memory.
+Use simple headings and bullet points.
+Be concise. No filler, no dramatic language, just the facts.
+If there is not enough content, say so honestly.
+
+Session memory:
+{memory_context}"""
+        contents = [prompt]
+
+    elif any(phrase in question_lower for phrase in ["what must i remember", "what should i remember", "important things", "key points"]):
+        prompt = base_instruction + f"""From this session memory, extract only the critical things to remember.
+Deadlines, key concepts, important names, action items only.
+Short bullet points. Nothing else. No intro, no outro.
+If nothing critical was found, say "Nothing critical found in this session."
+
+Session memory:
+{memory_context}"""
+        contents = [prompt]
+
+    else:
+        prompt = base_instruction + f"""Session memory:
 {memory_context}
 
-Now answer this question from the user: {question}
+Answer this question: {question}
 
-If the question is about something on screen right now, use the image.
-If it's about something that happened earlier, use the memory.
+Use the image if the question is about what's on screen right now.
+Use memory if it's about something that happened earlier.
 Be concise and direct."""
+        contents = [prompt, image]
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=[prompt, image]
+        contents=contents
     )
     overlay.update_last_message(response.text)
     print(f"Odin: {response.text}")
