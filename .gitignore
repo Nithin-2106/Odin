@@ -2,3 +2,4 @@ venv/
 .env
 capture_*.png
 memory.json
+__pycache__/
